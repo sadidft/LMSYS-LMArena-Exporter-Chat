@@ -144,3 +144,97 @@ Copy-paste kode berikut ke console dan tekan Enter:
         return null;
     }
 })();
+```
+
+### Langkah 4: Konfirmasi Export
+- Klik "OK" untuk memulai export
+- Pilih apakah urutan pesan perlu dibalik (biasanya pilih "Cancel" untuk urutan normal)
+- Chat akan otomatis disalin ke clipboard
+
+### Langkah 5: Paste Hasil
+Buka text editor atau markdown viewer, lalu paste (`Ctrl+V`) untuk melihat hasil export.
+
+## Format Output
+
+```markdown
+# Chat Export from LMArena
+
+**Export Date:** 12/1/2026, 16.00.40
+**Total Messages:** 4
+
+---
+
+## User (1)
+
+Pertanyaan atau pesan dari user...
+
+---
+
+## Assistant (1)
+
+Respons dari AI assistant...
+
+---
+
+## User (2)
+
+Pertanyaan berikutnya...
+
+---
+
+*Exported using LMArena Chat Exporter*
+*Total 4 messages exported*
+```
+
+## Error Handling
+
+### "No chat messages found"
+**Penyebab:** Halaman belum dimuat lengkap atau struktur DOM berubah
+**Solusi:** 
+- Refresh halaman dan tunggu chat dimuat
+- Scroll ke atas/bawah untuk memastikan semua pesan loaded
+- Coba lagi setelah beberapa detik
+
+### "Auto copy failed"
+**Penyebab:** Browser memblokir clipboard access atau permission denied
+**Solusi:**
+- Hasil export akan ditampilkan di console
+- Copy manual dari console log
+- Pastikan browser tab dalam keadaan active/focused
+
+### Urutan Pesan Terbalik
+**Penyebab:** LMArena kadang merender pesan dengan urutan berbeda
+**Solusi:** 
+- Pilih "OK" saat ditanya reverse order
+- Atau edit manual hasil export
+
+### Pesan Kosong atau Tidak Lengkap
+**Penyebab:** Konten pesan belum dimuat atau menggunakan lazy loading
+**Solusi:**
+- Scroll ke seluruh chat untuk trigger loading
+- Tunggu beberapa detik sebelum menjalankan script
+
+## Browser Compatibility
+
+- ✅ Chrome 60+
+- ✅ Firefox 55+
+- ✅ Safari 12+
+- ✅ Edge 79+
+
+## Limitasi
+
+- Hanya bekerja di halaman LMArena yang sudah dimuat lengkap
+- Tidak mendukung export attachment atau media
+- Deteksi role berdasarkan urutan pesan (user-assistant-user-assistant)
+- Memerlukan JavaScript enabled
+
+## Contributing
+
+Kontribusi dalam bentuk bug report, feature request, atau pull request sangat diterima. Pastikan untuk test di berbagai browser sebelum submit PR.
+
+## License
+
+MIT License - bebas digunakan untuk keperluan apapun dengan mencantumkan credit.
+```
+
+README ini SEO-friendly dengan keyword seperti "LMArena", "chat export", "markdown", "JavaScript", dan menjelaskan semua aspek penting tanpa terlalu verbose.
