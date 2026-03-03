@@ -1,118 +1,127 @@
 (function() {
-    console.log("Starting chat export...");
-    
-    const exportChatMessages = () => {
-        let chatMessages = [];
-        
-        const possibleSelectors = [
-            '.prose',
-            '[data-testid="message"]',
-            '.message',
-            '.chat-message',
-            '[role="article"]',
-            '.whitespace-pre-wrap'
-        ];
-        
-        for (let i = 0; i < possibleSelectors.length; i++) {
-            chatMessages = Array.from(document.querySelectorAll(possibleSelectors[i]));
-            if (chatMessages.length > 0) {
-                console.log(`Found ${chatMessages.length} messages using selector: ${possibleSelectors[i]}`);
-                break;
-            }
+    'use strict';
+
+    console.log('🚀 arena.ai Chat Exporter started');
+
+    function getMode() {
+        const modeButton = document.querySelector('button[role="combobox"] p.text-base.font-normal');
+        return modeButton ? modeButton.innerText.trim() : 'Unknown';
+    }
+
+    function extractThinking(container) {
+        const thoughtButton = Array.from(container.querySelectorAll('button')).find(btn =>
+            btn.textContent.includes('Thought for')
+        );
+        if (!thoughtButton) return null;
+        const targetId = thoughtButton.getAttribute('aria-controls');
+        if (!targetId) return null;
+        const contentDiv = document.getElementById(targetId);
+        if (!contentDiv) return null;
+        return contentDiv.innerText.trim().replace(/\n{3,}/g, '\n\n');
+    }
+
+    function getModelName(container) {
+        const nameSpan = container.querySelector('span.truncate');
+        return nameSpan ? nameSpan.innerText.trim() : 'Unknown Model';
+    }
+
+    function getMessageContent(container) {
+        const prose = container.querySelector('.prose');
+        if (!prose) return '';
+        return prose.innerText.trim()
+            .replace(/\n{3,}/g, '\n\n')
+            .replace(/^\s+|\s+$/gm, '');
+    }
+
+    function exportChat() {
+        console.log('🔍 Scanning for messages...');
+        const assistantSelector = 'div.bg-surface-primary';
+        const userSelector = 'div.bg-surface-raised';
+        const containers = Array.from(document.querySelectorAll(`${assistantSelector}, ${userSelector}`));
+
+        if (containers.length === 0) {
+            console.error('❌ No message containers found. Is the chat fully loaded?');
+            alert('Tidak ada pesan ditemukan. Pastikan halaman chat sudah dimuat dan coba lagi.');
+            return null;
         }
-        
-        if (chatMessages.length === 0) {
-            console.error("No chat messages found. Please refresh and wait for chat to load.");
-            alert("No chat messages found. Make sure the page is fully loaded.");
-            return;
-        }
 
-        let exportedMarkdown = "# Chat Export from LMArena\n\n";
-        exportedMarkdown += "**Export Date:** " + new Date().toLocaleString('id-ID') + "\n";
-        exportedMarkdown += "**Total Messages:** " + chatMessages.length + "\n\n";
-        exportedMarkdown += "---\n\n";
+        console.log(`📦 Found ${containers.length} message containers.`);
+        containers.reverse(); // dari paling lama ke terbaru
 
-        let userMessageCount = 1;
-        let assistantMessageCount = 1;
+        const messages = [];
+        let userCounter = 1, assistantCounter = 1;
 
-        const needReverse = confirm("Do you want to reverse message order? (OK = Yes, Cancel = No)");
-        const finalMessages = needReverse ? chatMessages.reverse() : chatMessages;
+        containers.forEach(container => {
+            const isAssistant = container.querySelector('.sticky.top-0') !== null;
 
-        for (let m = 0; m < finalMessages.length; m++) {
-            const currentMessage = finalMessages[m];
-            
-            let messageText = currentMessage.innerText || currentMessage.textContent || '';
-            messageText = messageText.trim();
-            messageText = messageText.replace(/\n{3,}/g, '\n\n');
-            messageText = messageText.replace(/^\s+|\s+$/gm, '');
-            messageText = messageText.replace(/\t/g, '    ');
-            messageText = messageText.replace(/^(Human:|User:|Assistant:|AI:)\s*/gm, '');
-            
-            if (messageText.length === 0) continue;
-            
-            let messageHeader = "";
-            let isUserMessage = (m % 2 === 0);
-            
-            if (isUserMessage) {
-                messageHeader = "## User (" + userMessageCount + ")";
-                userMessageCount++;
+            if (isAssistant) {
+                messages.push({
+                    role: 'assistant',
+                    model: getModelName(container),
+                    content: getMessageContent(container),
+                    thinking: extractThinking(container),
+                    index: assistantCounter++
+                });
             } else {
-                messageHeader = "## Assistant (" + assistantMessageCount + ")";
-                assistantMessageCount++;
+                messages.push({
+                    role: 'user',
+                    content: getMessageContent(container),
+                    index: userCounter++
+                });
             }
-            
-            exportedMarkdown += messageHeader + "\n\n" + messageText + "\n\n---\n\n";
-        }
+        });
 
-        exportedMarkdown += "*Exported using LMArena Chat Exporter*\n";
-        exportedMarkdown += "*Total " + (userMessageCount + assistantMessageCount - 2) + " messages exported*";
+        const mode = getMode();
+        const date = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+        let markdown = `# Chat Export from arena.ai\n\n`;
+        markdown += `**Mode:** ${mode}\n`;
+        markdown += `**Export Date:** ${date}\n`;
+        markdown += `**Total Messages:** ${messages.length}\n\n---\n\n`;
 
-        const tempTextarea = document.createElement('textarea');
-        tempTextarea.value = exportedMarkdown;
-        tempTextarea.style.position = 'fixed';
-        tempTextarea.style.left = '-9999px';
-        tempTextarea.style.top = '-9999px';
-        document.body.appendChild(tempTextarea);
-        
+        messages.forEach(msg => {
+            if (msg.role === 'user') {
+                markdown += `## 👤 User (${msg.index})\n\n${msg.content}\n\n---\n\n`;
+            } else {
+                markdown += `## 🤖 Assistant (${msg.index}) — **${msg.model}**\n\n`;
+                if (msg.thinking) markdown += `**Thinking:**\n\n${msg.thinking}\n\n`;
+                markdown += `${msg.content}\n\n---\n\n`;
+            }
+        });
+
+        markdown += `*Exported with [arena.ai Chat Exporter](https://github.com/sadidft/LMSYS-LMArena-Exporter-Chat)*`;
+        copyToClipboard(markdown, messages.length);
+        return messages;
+    }
+
+    function copyToClipboard(text, total) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        textarea.style.top = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        textarea.setSelectionRange(0, 99999); // dukungan mobile
         try {
-            tempTextarea.select();
-            tempTextarea.setSelectionRange(0, 99999);
-            
-            const copySuccess = document.execCommand('copy');
-            
-            if (copySuccess) {
-                console.log("SUCCESS! Chat copied to clipboard!");
-                console.log("Preview (first 500 chars):");
-                console.log(exportedMarkdown.substring(0, 500) + "...");
-                alert("Success! " + (userMessageCount + assistantMessageCount - 2) + " messages copied to clipboard.\n\nPaste in text editor to see markdown result.");
+            const successful = document.execCommand('copy');
+            if (successful) {
+                console.log('✅ Copied to clipboard!');
+                alert(`✅ Sukses! ${total} pesan telah disalin ke clipboard.`);
             } else {
-                throw new Error("Copy command failed");
+                throw new Error('execCommand returned false');
             }
-        } catch (error) {
-            console.error("Auto copy failed:", error);
-            console.log("MANUAL COPY - Copy text below:");
-            console.log("==================================================");
-            console.log(exportedMarkdown);
-            console.log("==================================================");
-            alert("Auto copy failed. Check console for manual copy.");
+        } catch (err) {
+            console.error('❌ Gagal menyalin otomatis:', err);
+            console.log('📋 Silakan salin teks berikut secara manual:\n', text);
+            alert('❌ Gagal menyalin otomatis. Cek console (F12) untuk mengambil teks.');
         } finally {
-            document.body.removeChild(tempTextarea);
+            document.body.removeChild(textarea);
         }
+    }
 
-        return {
-            totalMessages: userMessageCount + assistantMessageCount - 2,
-            userMessages: userMessageCount - 1,
-            assistantMessages: assistantMessageCount - 1,
-            markdownContent: exportedMarkdown
-        };
-    };
-
-    console.log("Click OK to start export...");
-    
-    if (confirm("Start exporting chat to markdown?\n\nMake sure chat page is fully loaded.")) {
-        return exportChatMessages();
+    if (confirm('Mulai ekspor chat dari arena.ai?\n\nPastikan semua pesan sudah termuat dan bagian thinking sudah diklik.')) {
+        exportChat();
     } else {
-        console.log("Export cancelled by user.");
-        return null;
+        console.log('Export dibatalkan.');
     }
 })();
