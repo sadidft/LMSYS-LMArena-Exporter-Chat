@@ -30,6 +30,7 @@ Jika Anda ingin menyertakan konten *thinking*, **klik setiap tombol "Thought for
 Copy seluruh kode di bawah ini, paste ke console, lalu tekan **Enter**.
 
 ```javascript
+```
 (function() {
     'use strict';
 
@@ -157,6 +158,9 @@ Copy seluruh kode di bawah ini, paste ke console, lalu tekan **Enter**.
         console.log('Export dibatalkan.');
     }
 })();
+```
+
+bikin kode untuk console itu jadi tanpa batasan teks. bisa copy semua! semua! ya!! semua isi chat!!! mau berapapun itu!!!!
 ```
 
 ### Langkah 4: Konfirmasi dan Hasil
