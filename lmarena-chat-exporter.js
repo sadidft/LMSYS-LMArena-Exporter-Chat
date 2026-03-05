@@ -1,3 +1,4 @@
+```
 (function() {
     'use strict';
 
@@ -125,3 +126,6 @@
         console.log('Export dibatalkan.');
     }
 })();
+```
+
+bikin kode untuk console itu jadi tanpa batasan teks. bisa copy semua! semua! ya!! semua isi chat!!! mau berapapun itu!!!!
